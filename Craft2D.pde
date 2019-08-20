@@ -3,6 +3,7 @@ public static class App {
 	static Vector Chunk_Size;
 	static Vector World_Size;
 	static int World_SeaLevel;
+	static int Chunk_GroundLevel = 7;
 
 	public static void init(
 		Vector bs, Vector cs, Vector ws
@@ -82,25 +83,33 @@ public class Chunk {
 	// Generate Chunk *Random*
 	void generate() {
 		this.blocks = new Block[App.Chunk_Size.x][App.Chunk_Size.y];
-		// Fill All Blocks With An Air Block // For Chunks Above y64
+		// Fill All Blocks With An Air Block // For Chunks Above App.World_SeaLevel
 		for (int i = 0; i < this.blocks.length; i++) { for (int j = 0; j < this.blocks[i].length; j++) {
 			Vector bPos = new Vector(i, j);
 			this.blocks[i][j] = new Block(0, bPos);
-			// Random Gen Stuff Switch etc...
+		} }
 
+		// Anything ABove App.World_SeaLevel Should Be Just Air!
+		if (Player.currentChunk.y <= App.World_SeaLevel) {
 			// Grass Floor
-			if (Player.currentChunk.y <= App.World_SeaLevel) {
-				if (Player.currentChunk.y == App.World_SeaLevel) {
-					if (j == floor(App.Chunk_Size.y/2)) {
-						this.blocks[i][j] = new Block(1, bPos);
-					}
-					if (j > floor(App.Chunk_Size.y/2)) {
+			if (Player.currentChunk.y == App.World_SeaLevel) {
+				int bypos = App.Chunk_GroundLevel;
+				for (int i = 0; i < App.Chunk_Size.x; i++) {
+					int randNum = floor(random(0, 3));
+					bypos += randNum == 0 ? -1 :
+							 randNum == 1 ?  0 :
+							 randNum == 2 ?  1 : 0;
+					if (bypos < 6) { bypos = 6; }
+					if (bypos > 8) { bypos = 8; }
+
+					this.blocks[i][bypos] = new Block(1, new Vector(i, bypos));
+					for (int j = bypos+1; j < App.Chunk_Size.y; j++) {
+						Vector bPos = new Vector(i, j);
 						this.blocks[i][j] = new Block(2, bPos);
 					}
 				}
 			}
-
-		} }
+		}
 		this.created = true;
 	}
 
@@ -120,6 +129,8 @@ public class Block {
 	int id;
 	String type;
 
+	Boolean t; // Transparency // Fall Through //
+
 	Vector pos;
 	Colour c;
 
@@ -127,8 +138,12 @@ public class Block {
 		int id, Vector pos
 	) {
 		this.id = id;
-		this.type = typeLookup[id];
-		this.c = textureLookup[id];
+		this.type = typeLookup[this.id];
+		this.c = textureLookup[this.id];
+		if (this.id == 0)
+			{ this.t = true; }
+		else
+			{ this.t = false; }
 
 		this.pos = pos;
 
@@ -149,6 +164,5 @@ String[] typeLookup = {
 	"air", "grass", "dirt"
 };
 Colour[] textureLookup = {
-	new Colour(255, 0), new Colour(0, 255, 0), new Colour(165, 42, 42)
+	new Colour(255, 0), new Colour(126, 200, 80), new Colour(155, 118, 83)
 };
-
